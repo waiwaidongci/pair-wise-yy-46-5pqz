@@ -63,3 +63,77 @@ export type PagedClaims = {
   page: number
   pageSize: number
 }
+
+// ---- 共保分摊批次 ----
+
+export type CoinsuranceBatchStatus = '待补录' | '计算中' | '超限停算'
+
+/** 同一事故下的一笔立案；多张立案按保单号去重 */
+export type PolicyFiling = {
+  claimId: string
+  policyNo: string
+  insurer: string
+  handler: string
+  filedAt: string
+}
+
+/** 承保份额 / 免赔额的一个版本（旧案件补录时从 V1 开始） */
+export type ShareVersion = {
+  version: number
+  share: number
+  deductible: number
+  reason: string
+  operator: string
+  createdAt: string
+}
+
+/** 某科目下某保单的一次登记；先到生效，后到留冲突 */
+export type SubjectRegistration = {
+  id: string
+  policyNo: string
+  insurer: string
+  share: number | null
+  deductible: number | null
+  status: '生效' | '冲突'
+  submittedBy: string
+  submittedAt: string
+  versions: ShareVersion[]
+}
+
+export type LossSubject = {
+  key: string
+  name: string
+  actualLoss: number
+  /** 依据版本：份额或免赔额变化时 +1，用于定位受影响会签 */
+  version: number
+  registrations: SubjectRegistration[]
+}
+
+/** 会签意见；失效后保留，并标出提交时的原依据 */
+export type ApprovalOpinion = {
+  id: string
+  subjectKey: string
+  role: string
+  result: '同意' | '退回'
+  comment: string
+  operator: string
+  createdAt: string
+  basisVersion: number
+  basisLabel: string
+  status: '有效' | '已失效'
+  invalidatedAt?: string
+}
+
+export type CoinsuranceBatch = {
+  accidentNo: string
+  title: string
+  accidentDate: string
+  site: string
+  actualLoss: number
+  status: CoinsuranceBatchStatus
+  reviewNote: string
+  filings: PolicyFiling[]
+  subjects: LossSubject[]
+  opinions: ApprovalOpinion[]
+  audit: Array<{ id: string; at: string; operator: string; action: string; detail: string }>
+}
